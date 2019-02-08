@@ -531,28 +531,25 @@ class ServerlessCustomDomain {
             return this.serverless.service.provider.apiGateway.restApiId;
         }
 
-        let response;
-        let stackResources = [];
-        const StackName = this.serverless.service.provider.stackName
-            || `${this.serverless.service.service}-${this.stage}`;
-        try {
-            do {
-                response = await this.cloudformation.listStackResources({
-                    NextToken: (response && response.NextToken) ? response.NextToken : undefined,
-                    StackName,
-                }).promise();
-                stackResources = response.StackResourceSummaries.filter((element) => {
-                    return element.LogicalResourceId === "ApiGatewayRestApi";
-                });
+        const stackName = this.serverless.service.provider.stackName ||
+            `${this.serverless.service.service}-${this.stage}`;
+        const params = {
+            LogicalResourceId: "ApiGatewayRestApi",
+            StackName: stackName,
+        };
 
-                if (stackResources.length) {
-                    return stackResources[0].PhysicalResourceId;
-                }
-            } while (response.NextToken && stackResources.length === 0);
+        let response;
+
+        try {
+            response = await this.cloudformation.describeStackResource(params).promise();
         } catch (err) {
             throw new Error(`Error: Failed to find CloudFormation resources for ${this.givenDomainName}\n`);
         }
-        throw new Error(`Error: Failed to find CloudFormation resources for ${this.givenDomainName}\n`);
+        const restApiId = response.StackResourceDetail.PhysicalResourceId;
+        if (!restApiId) {
+            throw new Error(`Error: No RestApiId associated with CloudFormation stack ${stackName}`);
+        }
+        return restApiId;
     }
 
     /**
