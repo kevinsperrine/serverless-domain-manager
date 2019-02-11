@@ -381,14 +381,13 @@ describe("Custom Domain Plugin", () => {
 
   describe("Gets Rest API correctly", () => {
     it("Fetches restApiId correctly when no ApiGateway specified", async () => {
-      AWS.mock("CloudFormation", "describeStackResources", (params, callback) => {
+      AWS.mock("CloudFormation", "describeStackResource", (params, callback) => {
         callback(null, {
-          StackResources:
-            [
-              { LogicalResourceId: "ApiGatewayRestApi", PhysicalResourceId: "test_rest_api_id" },
-              { LogicalResourceId: "LambdaPermission", PhysicalResourceId: "test_permission" },
-              { LogicalResourceId: "ApiGatewayResourceHello", PhysicalResourceId: "test_api_resource" },
-            ],
+          StackResourceDetail:
+            {
+              LogicalResourceId: "ApiGatewayRestApi",
+              PhysicalResourceId: "test_rest_api_id",
+            },
         });
       });
       const plugin = constructPlugin({
@@ -402,14 +401,13 @@ describe("Custom Domain Plugin", () => {
     });
 
     it("serverless.yml defines explicitly the apiGateway", async () => {
-      AWS.mock("CloudFormation", "describeStackResources", (params, callback) => {
+      AWS.mock("CloudFormation", "describeStackResource", (params, callback) => {
         callback(null, {
-          StackResources:
-            [
-              { LogicalResourceId: "ApiGatewayRestApi", PhysicalResourceId: "test_rest_api_id" },
-              { LogicalResourceId: "LambdaPermission", PhysicalResourceId: "test_permission" },
-              { LogicalResourceId: "ApiGatewayResourceHello", PhysicalResourceId: "test_api_resource" },
-            ],
+          StackResourceDetail:
+          {
+            LogicalResourceId: "ApiGatewayRestApi",
+            PhysicalResourceId: "test_rest_api_id",
+          },
         });
       });
 
@@ -524,15 +522,19 @@ describe("Custom Domain Plugin", () => {
       AWS.mock("APIGateway", "getDomainName", (params, callback) => {
         callback(null, { domainName: "fake_domain", distributionDomainName: "fake_dist_name" });
       });
+      AWS.mock("APIGateway", "getBasePathMappings", (params, callback) => {
+        callback(null, { items: [] });
+      });
       AWS.mock("APIGateway", "createBasePathMapping", (params, callback) => {
         callback(null, params);
       });
-      AWS.mock("CloudFormation", "describeStackResources", (params, callback) => {
+      AWS.mock("CloudFormation", "describeStackResource", (params, callback) => {
         callback(null, {
-          StackResources:
-            [
-              { LogicalResourceId: "ApiGatewayRestApi", PhysicalResourceId: "test_rest_api_id" },
-            ],
+          StackResourceDetail:
+          {
+            LogicalResourceId: "ApiGatewayRestApi",
+            PhysicalResourceId: "test_rest_api_id",
+          },
         });
       });
       const plugin = constructPlugin({ domainName: "test_domain"});
